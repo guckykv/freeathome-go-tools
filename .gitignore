@@ -1,0 +1,7 @@
+cmd/fahcli/fahcli
+cmd/fahcli/fahcli-pi
+cmd/fahinflux/.fahapi-config.json
+cmd/fahinflux/fahinflux
+cmd/fahinflux/fahinflux-pi
+go.mod.dev
+.idea
