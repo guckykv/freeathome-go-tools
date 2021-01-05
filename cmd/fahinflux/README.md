@@ -33,7 +33,12 @@ If you start `fahinflux` without any further option it will establish
 a websocket connection to the SysAP and runs forever (till you kill it).
 
 If you only want to read and write the state once to influx, use option `-n`.
-Than the command will read in the whole configuration, write the data to influxDB and then quits.
+Then the command will read in the whole configuration, write the data to influxDB and then quits.
+
+If you want use fahinflux as debugging tool to see, what changes are happening in your free@home 
+network, start the program with the `-d` option. This disables the InfluxDB part and
+only print outs all changes it reads from the websocket connection.
+
 
 ### Output Control
 
