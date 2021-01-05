@@ -26,6 +26,7 @@ var (
 	noWebsocket = flag.Bool("n", false, "no websocket connection; read and update data only once and quit")
 	verbose     = flag.Bool("v", false, "verbose output")
 	quiet       = flag.Bool("q", false, "no output")
+	debug       = flag.Bool("d", false, "debug: read all changes from the SysAp but doesn't connect or write to InfluxDB")
 
 	buf      bytes.Buffer
 	logger   = log.New(&buf, "", log.LstdFlags)
@@ -35,8 +36,17 @@ var (
 func main() {
 	initialize()
 
-	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, WriteData2Influx, logger, logLevel)
-	InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
+	websocketCallback := WriteData2Influx
+	if *debug {
+		websocketCallback = nil
+	}
+
+	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, websocketCallback, logger, logLevel)
+
+	if !*debug {
+		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
+	}
+
 	fahapi.ReadAndHydradteAllDevices()
 
 	if !*noWebsocket {
