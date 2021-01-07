@@ -91,7 +91,7 @@ func initializeApi(configfile string) error {
 	)
 	logger.SetOutput(os.Stdout)
 
-	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, nil, logger, logLevel)
+	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, nil, nil, logger, logLevel)
 	return nil
 }
 

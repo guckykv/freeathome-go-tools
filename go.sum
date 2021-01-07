@@ -14,8 +14,8 @@ github.com/go-chi/chi v4.0.2+incompatible/go.mod h1:eB3wogJHnLi3x/kFX2A+IbTBlXxm
 github.com/golangci/lint-1 v0.0.0-20181222135242-d2cdd8c08219/go.mod h1:/X8TswGSh1pIozq4ZwCfxS0WA5JGXguxk94ar/4c87Y=
 github.com/gorilla/websocket v1.4.2 h1:+/TMaTYc4QFitKJxsQ7Yye35DkWvkdLcvGKqM+x0Ufc=
 github.com/gorilla/websocket v1.4.2/go.mod h1:YR8l580nyteQvAITg2hZ9XVh4b55+EU/adAjf1fMHhE=
-github.com/guckykv/freeathome-go-fahapi/fahapi v0.0.0-20210105194720-2a5360e39884 h1:S7qKKq9+bS/cDiiintOIYxNxP8Nkz+UYFd3f9WdLxhY=
-github.com/guckykv/freeathome-go-fahapi/fahapi v0.0.0-20210105194720-2a5360e39884/go.mod h1:zQQzIkUbU4/LS6wDHQB01X0GXkdO/NIbUF7e1xvVeYs=
+github.com/guckykv/freeathome-go-fahapi/fahapi v0.0.0-20210107192400-f5324a13dcfa h1:2+VNnQwIM2bbVAH6eaFyp0kWi0ULvPElCYJ3BdPJ25U=
+github.com/guckykv/freeathome-go-fahapi/fahapi v0.0.0-20210107192400-f5324a13dcfa/go.mod h1:zQQzIkUbU4/LS6wDHQB01X0GXkdO/NIbUF7e1xvVeYs=
 github.com/influxdata/influxdb-client-go/v2 v2.2.1 h1:VSSQG8jGj05fz0HoNBKeCGdo2dtK7ShdmgGR+DQp4/8=
 github.com/influxdata/influxdb-client-go/v2 v2.2.1/go.mod h1:fa/d1lAdUHxuc1jedx30ZfNG573oQTQmUni3N6pcW+0=
 github.com/influxdata/line-protocol v0.0.0-20200327222509-2487e7298839 h1:W9WBk7wlPfJLvMCdtV4zPulc4uCPrlywQOmbFOhgQNU=

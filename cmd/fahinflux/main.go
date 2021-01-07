@@ -30,7 +30,7 @@ var (
 
 	buf      bytes.Buffer
 	logger   = log.New(&buf, "", log.LstdFlags)
-	logLevel = 1 // 0: quiet / 1: normal / 2: verbose (show also all trigger outs)
+	logLevel = 1 // 0: quiet / 1: normal / 2: verbose (show also all trigger outs) / 3: debug
 )
 
 func main() {
@@ -41,7 +41,7 @@ func main() {
 		websocketCallback = nil
 	}
 
-	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, websocketCallback, logger, logLevel)
+	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, websocketCallback, nil, logger, logLevel)
 
 	if !*debug {
 		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
@@ -89,5 +89,8 @@ func initialize() {
 		logLevel = 0
 	} else if *verbose {
 		logLevel = 2
+	}
+	if *debug {
+		logLevel = 3
 	}
 }
