@@ -8,6 +8,9 @@ import (
 	"github.com/tkanos/gonfig"
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
+	"strings"
 )
 
 type Configuration struct {
@@ -22,7 +25,7 @@ type Configuration struct {
 var (
 	configuration = Configuration{}
 
-	configFile  = flag.String("c", "./.fahapi-config.json", "configuration file")
+	configFile  = flag.String("c", "~/.fahapi-config.json", "configuration file")
 	noWebsocket = flag.Bool("n", false, "no websocket connection; read and update data only once and quit")
 	verbose     = flag.Bool("v", false, "verbose output")
 	quiet       = flag.Bool("q", false, "no output")
@@ -77,6 +80,11 @@ func usage() {
 func initialize() {
 	flag.Usage = usage
 	flag.Parse()
+
+	if strings.HasPrefix(*configFile, "~/") {
+		usr, _ := user.Current()
+		*configFile = filepath.Join(usr.HomeDir, (*configFile)[2:])
+	}
 
 	err := gonfig.GetConf(*configFile, &configuration)
 	if err != nil {
