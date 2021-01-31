@@ -8,6 +8,8 @@ import (
 	"github.com/tkanos/gonfig"
 	"log"
 	"os"
+	"os/user"
+	"path/filepath"
 	"strings"
 )
 
@@ -22,15 +24,19 @@ type Configuration struct {
 var (
 	configuration = Configuration{}
 
-	configFile    = flag.String("c", "./.fahapi-config.json", "configuration file")
-	deviceIdParam = flag.String("id", "", "deviceIdParam of virtual device")
-	verbose       = flag.Bool("v", false, "verbose output")
-	quiet         = flag.Bool("q", false, "no output")
-	debug         = flag.Bool("d", false, "debug: read all changes from the SysAp but doesn't connect or write to InfluxDB")
+	configFile   = flag.String("c", "~/.fahapi-config.json", "configuration file")
+	listVirtuals = flag.Bool("l", false, "list all devices with native id (virtuals)")
+	useNative    = flag.Bool("n", false, "arguments are the native IDs, not the virtual internal free@home ids")
+	verbose      = flag.Bool("v", false, "verbose output")
+	quiet        = flag.Bool("q", false, "no output")
+	debug        = flag.Bool("d", false, "debug: even more logging")
 
 	buf      bytes.Buffer
 	logger   = log.New(&buf, "", log.LstdFlags)
 	logLevel = 1 // 0: quiet / 1: normal / 2: verbose (show also all trigger outs) / 3: debug
+
+	refreshTime   = 300
+	virtualIdList []string
 )
 
 func main() {
@@ -38,20 +44,25 @@ func main() {
 	logLevel = 0 // api shouldn't show any messages
 	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, handleVSwitchUnit, handleVSwitchMessage, logger, logLevel)
 
-	var device *fahapi.Device
-	if *deviceIdParam == "" {
+	if len(flag.Args()) == 0 && !*listVirtuals {
 		log.Fatalf("Need virtual DeviceId as parameter\n")
 	}
-	var err error
-	if device, err = fahapi.GetDevice(defaultSysAP, *deviceIdParam); err != nil {
-		log.Fatalf("Can't load device with ID %s: %s\n", *deviceIdParam, err)
-	}
-
-	logger.Printf("Handle virtual device %s \"%s\" (%s)\n", *device.DisplayName, *device.NativeId, *deviceIdParam)
 
 	fahapi.ReadAndHydradteAllDevices()
 
-	err = fahapi.StartWebSocketLoop(300)
+	if *listVirtuals {
+		for _, unit := range fahapi.UnitMap {
+			if unit.GetUnitData().NativeId != nil {
+				fmt.Println(unit.String())
+			}
+		}
+		os.Exit(0)
+	}
+
+	vidList := handleArgs(flag.Args())
+	virtualIdList = filterType(vidList, fahapi.UntTypeSwitchActuator)
+
+	err := fahapi.StartWebSocketLoop(refreshTime)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -69,20 +80,64 @@ func handleVSwitchMessage(message fahapi.WebsocketMessage) {
 		}
 		deviceId := split[0]
 
-		if deviceId == *deviceIdParam {
+		if _, ok := inArray(virtualIdList, &deviceId); ok {
 			channelId := split[1]
 			if channelId == "ch0000" {
 				datapointId := split[2]
 				if datapointId == "idp0000" {
 					// proxy: copy input value to output
-					setValue(deviceId, channelId, "odp0000", value)
+					setValueInSysAP(deviceId, channelId, "odp0000", value)
 				}
 			}
 		}
 	}
 }
 
-func setValue(deviceId, channelId, datapointId, value string) {
+func handleVSwitchUnit(unitKeys []string) {
+	// currently only used for refreshing devices. For updating the SysAP the method "handleVSwitchMessage" is used.
+
+	for _, vid := range virtualIdList {
+		deviceKey := vid + ".ch0000" // device.channel of the virtual device (in this easy example the channel is always "ch0000"
+
+		for _, key := range unitKeys {
+			if key == deviceKey {
+				logger.Printf(fahapi.UnitMap[key].String())
+				switchActUnit := fahapi.CastSAU(fahapi.UnitMap[key])
+
+				if !switchActUnit.OnSet {
+					// if I get a message for this unit, but the state of "On" hasn't changed (OnSet==false)
+					// than this is the periodic refresh al call. I use this to refresh the virtual device at the SysAP.
+
+					/*
+						 * at the moment the free@home API always return (400 Bad Request) for this update PUT.
+						 * so this refresh is disabled
+
+						nativeId := *switchActUnit.NativeId
+						var reqBody *fahapi.VirtualDevice
+						reqBody = &fahapi.VirtualDevice{
+							Properties: fahapi.VirtualDeviceProperties{
+								Ttl: strconv.Itoa(refreshTime + 10),
+							},
+						}
+
+						if virtualId, err := fahapi.PutVirtualDevice(defaultSysAP, nativeId, reqBody); err != nil {
+							if virtualId != vid {
+								logger.Fatalf("Refresh device %s (%s): Getting back wrong id %s: %s\n", vid, nativeId, virtualId, err)
+							}
+							logger.Printf("Refresh device %s (%s) failed: %s\n", virtualId, nativeId, err)
+						} else {
+							if logLevel > 1 {
+								logger.Printf("Refresh device %s (%s) done\n", virtualId, nativeId)
+							}
+						}
+					*/
+				}
+			}
+		}
+	}
+}
+
+func setValueInSysAP(deviceId, channelId, datapointId, value string) {
 	var ok bool
 	var err error
 	if ok, err = fahapi.PutDatapoint(defaultSysAP, deviceId, channelId, datapointId, value); err != nil {
@@ -95,25 +150,23 @@ func setValue(deviceId, channelId, datapointId, value string) {
 	logger.Printf("Set %s to new value: %s\n", deviceId, value)
 }
 
-func handleVSwitchUnit(unitKeys []string) {
-	var deviceKey = *deviceIdParam + ".ch0000" // device.channel of the virtual device (in this easy example the channel is always "ch0000"
-
-	for _, key := range unitKeys {
-		if key == deviceKey {
-			logger.Printf(fahapi.UnitMap[key].String())
-			switchActUnit := fahapi.CastSAU(fahapi.UnitMap[key])
-			if !switchActUnit.OnSet {
-				// todo refresh virtual device
-				logger.Printf("todo refresh\n")
-			}
+func inArray(slice []string, val *string) (int, bool) {
+	if val == nil {
+		return -1, false
+	}
+	for i, item := range slice {
+		if item == *val {
+			return i, true
 		}
 	}
+	return -1, false
 }
 
 func usage() {
-	fmt.Printf("usage %s:\n", os.Args[0])
+	fmt.Printf("usage %s: VIRTID\n", os.Args[0])
 	flag.PrintDefaults()
-	fmt.Printf("\n  Example: \"fahvswitch --c ~/.fahapi-config.json --id=6000XXXXXXX\"\n")
+	fmt.Printf("\n  Example: \"fahvswitch --c ./.fahapi-config.json 6000XXXXXX1 6000XXXXXX2\"\n")
+	fmt.Printf("           Add as many virtual IDs as you want as arguments to the command.\n")
 	fmt.Printf("  Use:     \"fahinflux --c=\" if you want to skip the configfile and use env vars only\n")
 	fmt.Printf("  Configuration file needs the following fields:" + `
 	Host        or as env: "FHAPI_HOST"     // local IP of the SysAP
@@ -125,6 +178,11 @@ func usage() {
 func initialize() {
 	flag.Usage = usage
 	flag.Parse()
+
+	if strings.HasPrefix(*configFile, "~/") {
+		usr, _ := user.Current()
+		*configFile = filepath.Join(usr.HomeDir, (*configFile)[2:])
+	}
 
 	err := gonfig.GetConf(*configFile, &configuration)
 	if err != nil {
@@ -141,4 +199,48 @@ func initialize() {
 	if *debug {
 		logLevel = 3
 	}
+}
+
+func handleArgs(argumentList []string) (vidList []string) {
+	var device *fahapi.Device
+
+	if *useNative {
+		for _, unit := range fahapi.UnitMap {
+			if i, ok := inArray(argumentList, unit.GetUnitData().NativeId); ok {
+				vidList = append(vidList, unit.GetUnitData().SerialNumber)
+				argumentList = append(argumentList[:i], argumentList[i+1:]...)
+			}
+		}
+		if len(argumentList) > 0 {
+			log.Fatalf("Can't find all native devices: %v\n", argumentList)
+		}
+	}
+
+	var err error
+
+	for _, vid := range vidList {
+		if device, err = fahapi.GetDevice(defaultSysAP, vid); err != nil {
+			log.Fatalf("Can't load device with ID %s: %s\n", vid, err)
+		} else {
+			logger.Printf("Handle virtual device %s \"%s\" (%s)\n", *device.DisplayName, *device.NativeId, vid)
+		}
+	}
+
+	return vidList
+}
+
+func filterType(vidList []string, allowedType fahapi.UnitTypeConst) []string {
+	var outList []string
+
+	for _, vid := range vidList {
+		deviceKey := vid + ".ch0000" // device.channel of the virtual device (in this easy example the channel is always "ch0000"
+		unitdData := fahapi.UnitMap[deviceKey].GetUnitData()
+		if unitdData.Type == allowedType {
+			outList = append(outList, vid)
+		} else {
+			logger.Printf("Skip virtual device %s (%s). Illegal type: %s", vid, *unitdData.NativeId, unitdData.Type)
+		}
+	}
+
+	return outList
 }
