@@ -13,8 +13,10 @@ if you want to use the tools on your raspberry pi `make all-pi`.
 Than you get two commands `cmd/fahcli/fahcli` and `cmd/fahinflux/fahinflux`.
 Or for the raspberry pi `cmd/fahcli/fahcli-pi` and `cmd/fahinflux/fahinflux-pi`.
 
-Create a config file `.fahapi-config.json`. See the [template](.fahapi-config-TEMPLATE.json).
+Create a config file `.fahapi-config.json`. See the [template](.fahapi-config-TEMPLATE.json)
+and put it in your homedir.
 
+---
 
 ## fahinflux - Writes all Updates for some Device Types into an InfluxDB
 
@@ -26,7 +28,7 @@ Room Temperature Controller | Weather Station
 ----|----
 ![Grafana RTC](grafana-rtc.png) | ![Grafana Weather](grafana-weather.png)
 
-
+---
 
 See [fahinflux](./cmd/fahinflux).
 
@@ -35,5 +37,16 @@ See [fahinflux](./cmd/fahinflux).
 Very first version of a shell command to make all sorts of operations possible via the f@h API.
 
 See [fahcli](./cmd/fahcli).
+
+---
+
+## fahvswitch - Example program for handling virtual devices
+
+Small testprogramm for dealing with virtual devices.
+The fahvswitch can be used to get all input messages for a virtual switch actuator and send the value back as output message.
+So that the state will be shown correctly at the SysAP.
+
+See [fahvswitch](./cmd/fahvswitch).
+
 
 
