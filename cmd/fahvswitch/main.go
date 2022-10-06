@@ -60,7 +60,9 @@ func main() {
 	}
 
 	vidList := handleArgs(flag.Args())
-	virtualIdList = filterType(vidList, fahapi.UntTypeSwitchActuator)
+
+	allowedTypes := []fahapi.UnitTypeConst{fahapi.UntTypeSwitchActuator, fahapi.UntTypeDimmingActuator}
+	virtualIdList = filterType(vidList, allowedTypes)
 
 	err := fahapi.StartWebSocketLoop(refreshTime)
 	if err != nil {
@@ -101,10 +103,18 @@ func handleVSwitchUnit(unitKeys []string) {
 
 		for _, key := range unitKeys {
 			if key == deviceKey {
+				var dirty bool	// was a value changed or was it the regular timed update
 				logger.Printf(fahapi.UnitMap[key].String())
-				switchActUnit := fahapi.CastSAU(fahapi.UnitMap[key])
+				switch fahapi.UnitMap[key].GetUnitData().Type {
+				case fahapi.UntTypeDimmingActuator:
+					dimmActUnit := fahapi.CastDAU(fahapi.UnitMap[key])
+					dirty = handleDimmingActuator(dimmActUnit)
+				case fahapi.UntTypeSwitchActuator:
+					switchActUnit := fahapi.CastSAU(fahapi.UnitMap[key])
+					dirty = handleSwitchActuator(switchActUnit)
+				}
 
-				if !switchActUnit.OnSet {
+				if !dirty {
 					// if I get a message for this unit, but the state of "On" hasn't changed (OnSet==false)
 					// than this is the periodic refresh al call. I use this to refresh the virtual device at the SysAP.
 
@@ -135,6 +145,14 @@ func handleVSwitchUnit(unitKeys []string) {
 			}
 		}
 	}
+}
+
+func handleSwitchActuator(swActuator *fahapi.SwitchActuatorUnit) bool {
+	return swActuator.OnSet
+}
+
+func handleDimmingActuator(dimActuator *fahapi.DimmingActuatorUnit) bool {
+	return dimActuator.OnSet || dimActuator.DimmingValueSet
 }
 
 func setValueInSysAP(deviceId, channelId, datapointId, value string) {
@@ -229,13 +247,13 @@ func handleArgs(argumentList []string) (vidList []string) {
 	return vidList
 }
 
-func filterType(vidList []string, allowedType fahapi.UnitTypeConst) []string {
+func filterType(vidList []string, allowedTypes []fahapi.UnitTypeConst) []string {
 	var outList []string
 
 	for _, vid := range vidList {
 		deviceKey := vid + ".ch0000" // device.channel of the virtual device (in this easy example the channel is always "ch0000"
 		unitdData := fahapi.UnitMap[deviceKey].GetUnitData()
-		if unitdData.Type == allowedType {
+		if isAllowedType(unitdData.Type, allowedTypes) {
 			outList = append(outList, vid)
 		} else {
 			logger.Printf("Skip virtual device %s (%s). Illegal type: %s", vid, *unitdData.NativeId, unitdData.Type)
@@ -243,4 +261,13 @@ func filterType(vidList []string, allowedType fahapi.UnitTypeConst) []string {
 	}
 
 	return outList
+}
+
+func isAllowedType(val fahapi.UnitTypeConst, array []fahapi.UnitTypeConst) bool {
+	for i := range array {
+		if ok := array[i] == val; ok {
+			return true
+		}
+	}
+	return false
 }

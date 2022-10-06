@@ -6,5 +6,7 @@ cmd/fahinflux/fahinflux-pi
 cmd/fahvswitch/.fahapi-config.json
 cmd/fahvswitch/fahvswitch
 cmd/fahvswitch/fahvswitch-pi
+cmd/fahheos/fahheos
+cmd/fahheos/fahheos-pi
 go.mod.dev
 .idea

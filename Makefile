@@ -1,4 +1,4 @@
-all: fahinflux fahcli fahvswitch
+all: fahinflux fahcli fahvswitch fahheos
 all-pi: fahinflux-pi fahcli-pi fahvswitch-pi
 
 fahinflux:
@@ -18,3 +18,7 @@ fahvswitch:
 
 fahvswitch-pi:
 	cd cmd/fahvswitch && GOOS=linux GOARCH=arm GOARM=7 go build -o fahvswitch-pi main.go
+
+fahheos:
+	cd cmd/fahheos && go build -o fahheos main.go
+
