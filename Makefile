@@ -28,3 +28,8 @@ $(TARGET_SWITCH):
 
 fahvswitch-pi:
 	cd cmd/fahvswitch && GOOS=linux GOARCH=arm GOARM=7 go build -o fahvswitch-pi main.go
+
+clean:
+	rm -f cmd/fahinflux/$(TARGET_INFLUX)
+	rm -f cmd/fahcli/$(TARGET_CLI)
+	rm -f cmd/fahvswitch/$(TARGET_SWITCH)
