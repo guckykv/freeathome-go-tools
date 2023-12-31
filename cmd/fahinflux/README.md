@@ -23,6 +23,7 @@ Example configuration:
   "Username": "a3XXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXb9",
   "Password": "XXXXXXXXX",
   "InfluxUrl": "http://192.168.XX.YY:8086",
+  "InfluxOrg": "",
   "InfluxDB": "smarthome"
 }
 ```
