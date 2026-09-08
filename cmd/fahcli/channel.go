@@ -7,8 +7,8 @@ import (
 )
 
 type ChanCmd struct {
-	DeviceId  string `arg required help:"DeviceId or DeviceId.ChannelId"`
-	ChannelId string `arg optional help:"Channel Id"`
+	DeviceId  string `arg:"" required:"" help:"DeviceId or DeviceId.ChannelId"`
+	ChannelId string `arg:"" optional:"" help:"Channel Id"`
 }
 
 func (c *ChanCmd) Run(globals *Globals) (err error) {

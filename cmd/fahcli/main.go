@@ -22,11 +22,11 @@ type Globals struct {
 type CLI struct {
 	Globals
 
-	Device  DevCmd  `cmd help:"List devices or show one device."`
-	Channel ChanCmd `cmd help:"List channels of one device."`
-	Virtual VirtCmd `cmd help:"Virtual device handling"`
-	Get     GetCmd  `cmd help:"Get the value of a datapoint."`
-	Set     SetCmd  `cmd help:"Set the value of a datapoint."`
+	Device  DevCmd  `cmd:"" help:"List devices or show one device."`
+	Channel ChanCmd `cmd:"" help:"List channels of one device."`
+	Virtual VirtCmd `cmd:"" help:"Virtual device handling"`
+	Get     GetCmd  `cmd:"" help:"Get the value of a datapoint."`
+	Set     SetCmd  `cmd:"" help:"Set the value of a datapoint."`
 }
 
 type VersionFlag string

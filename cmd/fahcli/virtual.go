@@ -8,11 +8,11 @@ import (
 )
 
 type VirtCmd struct {
-	Serial string `arg required help:"Internal serial string"`
-	Ttl    int    `arg required help:"Ttl (time to live) Use 0 for delete, -1 for forever or NNN seconds"`
-	Create bool   `optional short:"n" help:"Create a new virtual device (needs Type and Name)"`
-	Name   string `arg optional help:"Display Name for the new device"`
-	Type   string `arg optional help:"One of type VirtualDeviceType"`
+	Serial string `arg:"" required:"" help:"Internal serial string"`
+	Ttl    int    `arg:"" required:"" help:"Ttl (time to live) Use 0 for delete, -1 for forever or NNN seconds"`
+	Create bool   `optional:"" short:"n" help:"Create a new virtual device (needs Type and Name)"`
+	Name   string `arg:"" optional:"" help:"Display Name for the new device"`
+	Type   string `arg:"" optional:"" help:"One of type VirtualDeviceType"`
 }
 
 func (virtCmd *VirtCmd) Run(globals *Globals) (err error) {

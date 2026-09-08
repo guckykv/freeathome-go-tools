@@ -1,10 +1,36 @@
+### Zugangsdaten – niemals committen
+# Greift in jedem Verzeichnis. Bisher waren cmd/fahcli/ und das Repo-Root nicht abgedeckt.
+.fahapi-config*.json
+!.fahapi-config-TEMPLATE.json
+*.local.json
+.env
+.env.*
+
+### Gebaute Binaries
 cmd/fahcli/fahcli
 cmd/fahcli/fahcli-pi
-cmd/fahinflux/.fahapi-config.json
 cmd/fahinflux/fahinflux
 cmd/fahinflux/fahinflux-pi
-cmd/fahvswitch/.fahapi-config.json
 cmd/fahvswitch/fahvswitch
 cmd/fahvswitch/fahvswitch-pi
+
+### IDE
+.idea/
+.vscode/
+*.iml
+
+### Go
+*.exe
+*.exe~
+*.test
+*.out
+coverage.*
 go.mod.dev
-.idea
+
+### macOS
+.DS_Store
+
+### Arbeitsdokumente – nicht committen
+REFACTORING-PLAN.md
+go.work
+go.work.sum

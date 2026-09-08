@@ -8,8 +8,8 @@ import (
 type DevCmd struct {
 	DeviceId struct {
 		Short    bool   `help:"List only the IDs" short:"s"`
-		DeviceId string `arg optional help:"Show given device. Without id list all device ids."`
-	} `arg`
+		DeviceId string `arg:"" optional:"" help:"Show given device. Without id list all device ids."`
+	} `arg:""`
 }
 
 func (dev *DevCmd) Run(globals *Globals) error {

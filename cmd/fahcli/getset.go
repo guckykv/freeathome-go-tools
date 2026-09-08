@@ -9,7 +9,7 @@ import (
 // GET --------------------------------------
 
 type GetCmd struct {
-	Paths []string `arg help:"Paths of datapoints: <DeviceId>.<ChannelId>.<Datapoint>"`
+	Paths []string `arg:"" help:"Paths of datapoints: <DeviceId>.<ChannelId>.<Datapoint>"`
 }
 
 func (g *GetCmd) Run(globals *Globals) (err error) {
@@ -43,8 +43,8 @@ func getDatapoint(path string) (err error) {
 
 type SetCmd struct {
 	Assigns struct {
-		Assigns map[string]string `arg help:"Setting values via <DeviceId>.<ChannelId>.<Datapoint>=<Value>"`
-	} `arg`
+		Assigns map[string]string `arg:"" help:"Setting values via <DeviceId>.<ChannelId>.<Datapoint>=<Value>"`
+	} `arg:""`
 }
 
 func (set *SetCmd) Run(globals *Globals) (err error) {
