@@ -13,6 +13,9 @@ cmd/fahinflux/fahinflux
 cmd/fahinflux/fahinflux-pi
 cmd/fahvswitch/fahvswitch
 cmd/fahvswitch/fahvswitch-pi
+cmd/fahcli/fahcli-pi64
+cmd/fahinflux/fahinflux-pi64
+cmd/fahvswitch/fahvswitch-pi64
 
 ### IDE
 .idea/
@@ -20,6 +23,8 @@ cmd/fahvswitch/fahvswitch-pi
 *.iml
 
 ### Go
+# Backups von check-noworkspace, falls es je hart abbricht
+*.nows.bak
 *.exe
 *.exe~
 *.test

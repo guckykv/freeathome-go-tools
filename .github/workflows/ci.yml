@@ -16,8 +16,8 @@ jobs:
           go-version-file: go.mod
 
       # The library is developed alongside these tools. Prefer a branch of the
-      # same name so a cross-repository change can be tested as one unit, and
-      # fall back to the default branch.
+      # same name so a cross-repository change is tested as one unit, and fall
+      # back to the default branch.
       - name: Check out the fahapi library next to this repository
         run: |
           branch="${{ github.head_ref || github.ref_name }}"
@@ -26,13 +26,6 @@ jobs:
             || git clone --depth 1 "$repo" ../freeathome-go-fahapi
           go work init . ../freeathome-go-fahapi
 
-      - name: gofmt
-        run: |
-          unformatted=$(gofmt -l .)
-          if [ -n "$unformatted" ]; then
-            echo "not gofmt'ed:"; echo "$unformatted"; exit 1
-          fi
-
-      - run: go vet ./...
-      - run: go build ./...
-      - run: go test -race ./...
+      # Same targets you run locally, so CI cannot drift from the Makefile.
+      - run: make check
+      - run: make check-noworkspace
