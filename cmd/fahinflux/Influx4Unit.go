@@ -133,7 +133,7 @@ func newInfluxPointWDS(wds *fahapi.WindowDoorSensorUnit) *write.Point {
 	tags := map[string]string{
 		"floor": wds.Floor,
 		"room":  wds.Room,
-		"name":  *wds.GetChannel().DisplayName,
+		"name":  wds.DisplayName(),
 	}
 	open := 0
 	if wds.Open {

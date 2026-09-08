@@ -226,7 +226,7 @@ func handleArgs(argumentList []string) (vidList []string) {
 		if device, err = fahapi.GetDevice(defaultSysAP, vid); err != nil {
 			log.Fatalf("Can't load device with ID %s: %s\n", vid, err)
 		} else {
-			logger.Printf("Handle virtual device %s \"%s\" (%s)\n", *device.DisplayName, *device.NativeId, vid)
+			logger.Printf("Handle virtual device %s \"%s\" (%s)\n", fahapi.Str(device.DisplayName), fahapi.Str(device.NativeId), vid)
 		}
 	}
 
@@ -238,11 +238,16 @@ func filterType(vidList []string, allowedType fahapi.UnitTypeConst) []string {
 
 	for _, vid := range vidList {
 		deviceKey := vid + ".ch0000" // device.channel of the virtual device (in this easy example the channel is always "ch0000"
-		unitdData := fahapi.UnitMap[deviceKey].GetUnitData()
+		unit, ok := fahapi.UnitMap[deviceKey]
+		if !ok {
+			logger.Printf("Skip device %s: no unit %s known\n", vid, deviceKey)
+			continue
+		}
+		unitdData := unit.GetUnitData()
 		if unitdData.Type == allowedType {
 			outList = append(outList, vid)
 		} else {
-			logger.Printf("Skip virtual device %s (%s). Illegal type: %s", vid, *unitdData.NativeId, unitdData.Type)
+			logger.Printf("Skip virtual device %s (%s). Illegal type: %s\n", vid, fahapi.Str(unitdData.NativeId), unitdData.Type)
 		}
 	}
 
