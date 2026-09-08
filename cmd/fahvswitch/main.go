@@ -76,7 +76,7 @@ func handleVSwitchMessage(message fahapi.WebsocketMessage) {
 	for updDatapoint, value := range datapoints {
 		split := strings.Split(updDatapoint, "/")
 		if len(split) != 3 {
-			logger.Fatalf("illegal message %x: illegal datapoint format %s", message, updDatapoint)
+			logger.Fatalf("illegal message %+v: illegal datapoint format %s", message, updDatapoint)
 		}
 		deviceId := split[0]
 
@@ -101,7 +101,7 @@ func handleVSwitchUnit(unitKeys []string) {
 
 		for _, key := range unitKeys {
 			if key == deviceKey {
-				logger.Printf(fahapi.UnitMap[key].String())
+				logger.Printf("%s", fahapi.UnitMap[key].String())
 				switchActUnit := fahapi.CastSAU(fahapi.UnitMap[key])
 
 				if !switchActUnit.OnSet {

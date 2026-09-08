@@ -78,10 +78,8 @@ func main() {
 }
 
 func initializeApi(configfile string) error {
-	err := gonfig.GetConf(configfile, &configuration)
-	if err != nil {
-		log.Fatal("GetConfig: " + err.Error())
-		return err
+	if err := gonfig.GetConf(configfile, &configuration); err != nil {
+		return fmt.Errorf("read config %s: %w", configfile, err)
 	}
 
 	var (
