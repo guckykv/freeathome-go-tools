@@ -2,15 +2,18 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/guckykv/freeathome-go-fahapi/fahapi"
 	"github.com/tkanos/gonfig"
 	"log"
 	"os"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"strings"
+	"syscall"
 )
 
 type Configuration struct {
@@ -55,8 +58,19 @@ func main() {
 	}
 
 	if !*noWebsocket {
-		err := fahapi.StartWebSocketLoop(300)
-		if err != nil {
+		// Signal handling belongs to the application, not to the library.
+		ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+		defer stop()
+
+		hangup := make(chan os.Signal, 1)
+		signal.Notify(hangup, syscall.SIGHUP)
+		go func() {
+			for range hangup {
+				fahapi.TreatAllUnitsAsUpdated(true)
+			}
+		}()
+
+		if err := fahapi.StartWebSocketLoop(ctx, 300); err != nil {
 			log.Fatal(err)
 		}
 	}

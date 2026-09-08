@@ -2,16 +2,19 @@ package main
 
 import (
 	"bytes"
+	"context"
 	"flag"
 	"fmt"
 	"github.com/guckykv/freeathome-go-fahapi/fahapi"
 	"github.com/tkanos/gonfig"
 	"log"
 	"os"
+	"os/signal"
 	"os/user"
 	"path/filepath"
 	"sort"
 	"strings"
+	"syscall"
 )
 
 var defaultSysAP = "00000000-0000-0000-0000-000000000000"
@@ -65,8 +68,15 @@ func main() {
 	vidList := handleArgs(flag.Args())
 	virtualIdList = filterType(vidList, fahapi.UntTypeSwitchActuator)
 
-	err := fahapi.StartWebSocketLoop(refreshTime)
-	if err != nil {
+	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
+	defer stop()
+
+	// The PUTs run in their own goroutine. Issuing them from the message
+	// callback would stall the websocket loop -- including its pings -- for the
+	// duration of a synchronous HTTP request.
+	startSetWorker(ctx)
+
+	if err := fahapi.StartWebSocketLoop(ctx, refreshTime); err != nil {
 		log.Fatal(err)
 	}
 
@@ -142,17 +152,46 @@ func handleVSwitchUnit(unitKeys []string) {
 	}
 }
 
+type setRequest struct {
+	deviceId, channelId, datapointId, value string
+}
+
+var setQueue = make(chan setRequest, 64)
+
+// startSetWorker drains setQueue. Keeping the HTTP PUTs off the websocket
+// goroutine means a slow or unresponsive SysAP cannot block message handling.
+func startSetWorker(ctx context.Context) {
+	go func() {
+		for {
+			select {
+			case <-ctx.Done():
+				return
+			case req := <-setQueue:
+				applySetRequest(req)
+			}
+		}
+	}()
+}
+
 func setValueInSysAP(deviceId, channelId, datapointId, value string) {
-	var ok bool
-	var err error
-	if ok, err = fahapi.PutDatapoint(defaultSysAP, deviceId, channelId, datapointId, value); err != nil {
+	select {
+	case setQueue <- setRequest{deviceId, channelId, datapointId, value}:
+	default:
+		logger.Printf("set queue full, dropped %s.%s.%s=%s\n", deviceId, channelId, datapointId, value)
+	}
+}
+
+func applySetRequest(req setRequest) {
+	ok, err := fahapi.PutDatapoint(defaultSysAP, req.deviceId, req.channelId, req.datapointId, req.value)
+	if err != nil {
 		logger.Printf("error: %s\n", err)
 		return
 	}
 	if !ok {
-		logger.Printf("Can't set datapoint %s.%s.%s to %s\n", deviceId, channelId, datapointId, value)
+		logger.Printf("Can't set datapoint %s.%s.%s to %s\n", req.deviceId, req.channelId, req.datapointId, req.value)
+		return
 	}
-	logger.Printf("Set %s to new value: %s\n", deviceId, value)
+	logger.Printf("Set %s to new value: %s\n", req.deviceId, req.value)
 }
 
 func inArray(slice []string, val *string) (int, bool) {
