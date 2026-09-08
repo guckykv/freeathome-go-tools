@@ -32,8 +32,8 @@ func InitializeInfluxDB(url, token, org, bucket string) error {
 		return fmt.Errorf("influx: no InfluxUrl configured")
 	}
 	if bucket == "" {
-		return fmt.Errorf("influx: no bucket configured -- set InfluxBucket (or InfluxDB), " +
-			"otherwise every write fails with \"bucket not found\"")
+		return fmt.Errorf("influx: no InfluxDB configured -- without it every write " +
+			"fails with \"bucket not found\"")
 	}
 
 	influxConfig = influxConfiguration{
