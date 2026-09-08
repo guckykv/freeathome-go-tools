@@ -1,6 +1,7 @@
 package main
 
 import (
+	"fmt"
 	"github.com/guckykv/freeathome-go-fahapi/fahapi"
 	"github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
@@ -24,7 +25,17 @@ var influxConfig influxConfiguration
 // InitializeInfluxDB opens the connection. Call CloseInfluxDB when done. After
 // this, all changes of RTC, WindowSensor and WeatherStation are logged to
 // InfluxDB.
-func InitializeInfluxDB(url, token, org, bucket string) {
+func InitializeInfluxDB(url, token, org, bucket string) error {
+	// Both of these come back from the server as "bucket not found", which
+	// sends the reader looking in the wrong place. Say what is actually missing.
+	if url == "" {
+		return fmt.Errorf("influx: no InfluxUrl configured")
+	}
+	if bucket == "" {
+		return fmt.Errorf("influx: no bucket configured -- set InfluxBucket (or InfluxDB), " +
+			"otherwise every write fails with \"bucket not found\"")
+	}
+
 	influxConfig = influxConfiguration{
 		active: true,
 		url:    url,
@@ -36,8 +47,8 @@ func InitializeInfluxDB(url, token, org, bucket string) {
 	influxClient = influxdb2.NewClientWithOptions(url, token, influxdb2.DefaultOptions().SetBatchSize(50))
 	writeApi = influxClient.WriteAPI(org, bucket)
 
-	// InfluxDB 2.x rejects a write without an organisation, and reports it as
-	// "bucket not found", which points at the wrong thing. 1.8.x ignores org.
+	// InfluxDB 2.x rejects a write without an organisation and reports that as
+	// "bucket not found" too. 1.8.x ignores org, so this is a hint, not an error.
 	if org == "" {
 		logger.Printf("influx: no organisation configured -- fine for InfluxDB 1.8.x, "+
 			"but 2.x will answer %q for every write. Set InfluxOrg / INFLUX_ORG.\n", "bucket not found")
@@ -48,6 +59,9 @@ func InitializeInfluxDB(url, token, org, bucket string) {
 			logger.Printf("influx write error: %s\n", err)
 		}
 	}()
+
+	logger.Printf("influx: writing to %s, bucket %q, org %q\n", url, bucket, org)
+	return nil
 }
 
 // CloseInfluxDB flushes what is pending and closes the connection.

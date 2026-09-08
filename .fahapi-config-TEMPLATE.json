@@ -3,7 +3,7 @@
   "Username": "a3XXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXb9",
   "Password": "XXXXXXXXX",
   "InfluxUrl": "http://192.168.XX.YY:8086",
-  "InfluxDB": "smarthome",
-  "InfluxToken": "username:password",
-  "InfluxOrg": ""
+  "InfluxBucket": "smarthome",
+  "InfluxOrg": "",
+  "InfluxToken": "username:password"
 }
