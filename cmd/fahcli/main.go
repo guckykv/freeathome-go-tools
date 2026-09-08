@@ -77,19 +77,25 @@ func main() {
 	ctx.FatalIfErrorf(err)
 }
 
+// api is the client every subcommand works with, built by initializeApi.
+var api *fahapi.Client
+
 func initializeApi(configfile string) error {
 	if err := gonfig.GetConf(configfile, &configuration); err != nil {
 		return fmt.Errorf("read config %s: %w", configfile, err)
 	}
 
-	var (
-		buf      bytes.Buffer
-		logger   = log.New(&buf, "", log.LstdFlags)
-		logLevel = 1 // 0: quiet / 1: normal / 2: verbose (show also all trigger outs)
-	)
+	var buf bytes.Buffer
+	logger := log.New(&buf, "", log.LstdFlags)
 	logger.SetOutput(os.Stdout)
 
-	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, nil, nil, logger, logLevel)
+	api = fahapi.New(fahapi.Config{
+		Host:     configuration.Host,
+		Username: configuration.Username,
+		Password: configuration.Password,
+		Logger:   logger,
+		LogLevel: 1, // 0: quiet / 1: normal / 2: verbose (show also all trigger outs)
+	})
 	return nil
 }
 

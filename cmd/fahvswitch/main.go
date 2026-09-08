@@ -35,6 +35,8 @@ var (
 	quiet        = flag.Bool("q", false, "no output")
 	debug        = flag.Bool("d", false, "debug: even more logging")
 
+	api *fahapi.Client
+
 	buf      bytes.Buffer
 	logger   = log.New(&buf, "", log.LstdFlags)
 	logLevel = 1 // 0: quiet / 1: normal / 2: verbose (show also all trigger outs) / 3: debug
@@ -46,18 +48,26 @@ var (
 func main() {
 	initialize()
 	logLevel = 0 // api shouldn't show any messages
-	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, handleVSwitchUnit, handleVSwitchMessage, logger, logLevel)
+	api = fahapi.New(fahapi.Config{
+		Host:            configuration.Host,
+		Username:        configuration.Username,
+		Password:        configuration.Password,
+		UnitCallback:    handleVSwitchUnit,
+		MessageCallback: handleVSwitchMessage,
+		Logger:          logger,
+		LogLevel:        logLevel,
+	})
 
 	if len(flag.Args()) == 0 && !*listVirtuals {
 		log.Fatalf("Need virtual DeviceId as parameter\n")
 	}
 
-	if err := fahapi.ReadAndHydrateAllDevices(); err != nil {
+	if err := api.ReadAndHydrateAllDevices(); err != nil {
 		log.Fatal(err)
 	}
 
 	if *listVirtuals {
-		for _, unit := range fahapi.UnitMap {
+		for _, unit := range api.Units() {
 			if unit.GetUnitData().NativeId != nil {
 				fmt.Println(unit.String())
 			}
@@ -76,7 +86,7 @@ func main() {
 	// duration of a synchronous HTTP request.
 	startSetWorker(ctx)
 
-	if err := fahapi.StartWebSocketLoop(ctx, refreshTime); err != nil {
+	if err := api.StartWebSocketLoop(ctx, refreshTime); err != nil {
 		log.Fatal(err)
 	}
 
@@ -116,8 +126,8 @@ func handleVSwitchUnit(unitKeys []string) {
 
 		for _, key := range unitKeys {
 			if key == deviceKey {
-				logger.Printf("%s", fahapi.UnitMap[key].String())
-				switchActUnit := fahapi.CastSAU(fahapi.UnitMap[key])
+				logger.Printf("%s", api.Unit(key).String())
+				switchActUnit := fahapi.CastSAU(api.Unit(key))
 
 				if !switchActUnit.OnSet {
 					// if I get a message for this unit, but the state of "On" hasn't changed (OnSet==false)
@@ -182,7 +192,7 @@ func setValueInSysAP(deviceId, channelId, datapointId, value string) {
 }
 
 func applySetRequest(req setRequest) {
-	ok, err := fahapi.PutDatapoint(defaultSysAP, req.deviceId, req.channelId, req.datapointId, req.value)
+	ok, err := api.PutDatapoint(defaultSysAP, req.deviceId, req.channelId, req.datapointId, req.value)
 	if err != nil {
 		logger.Printf("error: %s\n", err)
 		return
@@ -256,7 +266,7 @@ func handleArgs(argumentList []string) (vidList []string) {
 		for _, arg := range argumentList {
 			wanted[arg] = true
 		}
-		for _, unit := range fahapi.UnitMap {
+		for _, unit := range api.Units() {
 			nativeId := unit.GetUnitData().NativeId
 			if nativeId != nil && wanted[*nativeId] {
 				vidList = append(vidList, unit.GetUnitData().SerialNumber)
@@ -280,7 +290,7 @@ func handleArgs(argumentList []string) (vidList []string) {
 	var err error
 
 	for _, vid := range vidList {
-		if device, err = fahapi.GetDevice(defaultSysAP, vid); err != nil {
+		if device, err = api.GetDevice(defaultSysAP, vid); err != nil {
 			log.Fatalf("Can't load device with ID %s: %s\n", vid, err)
 		} else {
 			logger.Printf("Handle virtual device %s \"%s\" (%s)\n", fahapi.Str(device.DisplayName), fahapi.Str(device.NativeId), vid)
@@ -295,8 +305,8 @@ func filterType(vidList []string, allowedType fahapi.UnitTypeConst) []string {
 
 	for _, vid := range vidList {
 		deviceKey := vid + ".ch0000" // device.channel of the virtual device (in this easy example the channel is always "ch0000"
-		unit, ok := fahapi.UnitMap[deviceKey]
-		if !ok {
+		unit := api.Unit(deviceKey)
+		if unit == nil {
 			logger.Printf("Skip device %s: no unit %s known\n", vid, deviceKey)
 			continue
 		}

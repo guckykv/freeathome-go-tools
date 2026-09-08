@@ -34,6 +34,8 @@ var (
 	quiet       = flag.Bool("q", false, "no output")
 	debug       = flag.Bool("d", false, "debug: read all changes from the SysAp but doesn't connect or write to InfluxDB")
 
+	fahClient *fahapi.Client
+
 	buf      bytes.Buffer
 	logger   = log.New(&buf, "", log.LstdFlags)
 	logLevel = 1 // 0: quiet / 1: normal / 2: verbose (show also all trigger outs) / 3: debug
@@ -47,13 +49,20 @@ func main() {
 		websocketCallback = nil
 	}
 
-	fahapi.ConfigureApi(configuration.Host, configuration.Username, configuration.Password, websocketCallback, nil, logger, logLevel)
+	fahClient = fahapi.New(fahapi.Config{
+		Host:         configuration.Host,
+		Username:     configuration.Username,
+		Password:     configuration.Password,
+		UnitCallback: websocketCallback,
+		Logger:       logger,
+		LogLevel:     logLevel,
+	})
 
 	if !*debug {
 		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
 	}
 
-	if err := fahapi.ReadAndHydrateAllDevices(); err != nil {
+	if err := fahClient.ReadAndHydrateAllDevices(); err != nil {
 		log.Fatal(err)
 	}
 
@@ -66,11 +75,11 @@ func main() {
 		signal.Notify(hangup, syscall.SIGHUP)
 		go func() {
 			for range hangup {
-				fahapi.TreatAllUnitsAsUpdated(true)
+				fahClient.TreatAllUnitsAsUpdated(true)
 			}
 		}()
 
-		if err := fahapi.StartWebSocketLoop(ctx, 300); err != nil {
+		if err := fahClient.StartWebSocketLoop(ctx, 300); err != nil {
 			log.Fatal(err)
 		}
 	}

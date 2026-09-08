@@ -30,7 +30,7 @@ func (c *ChanCmd) Run(globals *Globals) (err error) {
 	}
 
 	var device *fahapi.Device
-	if device, err = fahapi.GetDevice(defaultSysAP, deviceId); err != nil {
+	if device, err = api.GetDevice(defaultSysAP, deviceId); err != nil {
 		return
 	}
 

@@ -35,7 +35,7 @@ func (virtCmd *VirtCmd) Run(globals *Globals) (err error) {
 	}
 
 	var virtualSerial string
-	if virtualSerial, err = fahapi.PutVirtualDevice(defaultSysAP, virtCmd.Serial, reqBody); err != nil {
+	if virtualSerial, err = api.PutVirtualDevice(defaultSysAP, virtCmd.Serial, reqBody); err != nil {
 		return
 	}
 
@@ -64,7 +64,7 @@ func (virtCmd *VirtCmd) vCreate(globals *Globals) (*fahapi.VirtualDevice, error)
 
 func vDebug(virtualSerial string) (err error) {
 	var virtualDev *fahapi.Device
-	virtualDev, err = fahapi.GetDevice(defaultSysAP, virtualSerial)
+	virtualDev, err = api.GetDevice(defaultSysAP, virtualSerial)
 
 	time.Sleep(13 * time.Second)
 
@@ -72,6 +72,6 @@ func vDebug(virtualSerial string) (err error) {
 	json, err = unmarshall(virtualDev)
 	fmt.Println(string(json))
 
-	_, err = fahapi.PutDatapoint(defaultSysAP, virtualSerial, "ch0000", "odp0000", "1")
+	_, err = api.PutDatapoint(defaultSysAP, virtualSerial, "ch0000", "odp0000", "1")
 	return err
 }

@@ -20,7 +20,7 @@ func (dev *DevCmd) Run(globals *Globals) error {
 	if dev.DeviceId.DeviceId != "" {
 		// print structure of one device
 		var device *fahapi.Device
-		if device, err = fahapi.GetDevice(defaultSysAP, dev.DeviceId.DeviceId); err != nil {
+		if device, err = api.GetDevice(defaultSysAP, dev.DeviceId.DeviceId); err != nil {
 			return err
 		}
 		var json []byte
@@ -33,7 +33,7 @@ func (dev *DevCmd) Run(globals *Globals) error {
 	} else {
 		// print plain list of all devices
 		var dl *fahapi.Devicelist
-		if dl, err = fahapi.GetDeviceList(); err != nil {
+		if dl, err = api.GetDeviceList(); err != nil {
 			return err
 		}
 		for _, devId := range dl.AdditionalProperties {

@@ -2,7 +2,6 @@ package main
 
 import (
 	"fmt"
-	"github.com/guckykv/freeathome-go-fahapi/fahapi"
 	"strings"
 )
 
@@ -32,7 +31,7 @@ func getDatapoint(path string) (err error) {
 		return fmt.Errorf("illegal datapoint path format: %s", path)
 	}
 	var value string
-	if value, err = fahapi.GetDatapoint(defaultSysAP, parts[0], parts[1], parts[2]); err != nil {
+	if value, err = api.GetDatapoint(defaultSysAP, parts[0], parts[1], parts[2]); err != nil {
 		return err
 	}
 	fmt.Println(value)
@@ -66,7 +65,7 @@ func setDatapoint(path string, value string) (err error) {
 		return fmt.Errorf("illegal datapoint path format: %s", path)
 	}
 	var ok bool
-	if ok, err = fahapi.PutDatapoint(defaultSysAP, parts[0], parts[1], parts[2], value); err != nil {
+	if ok, err = api.PutDatapoint(defaultSysAP, parts[0], parts[1], parts[2], value); err != nil {
 		return err
 	}
 	if !ok {

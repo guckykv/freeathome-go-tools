@@ -35,7 +35,7 @@ func WriteData2Influx(keys []string) {
 		count := 0
 		client := openInflux()
 		for _, key := range keys {
-			if writePoints(fahapi.UnitMap[key]) {
+			if writePoints(fahClient.Unit(key)) {
 				count++
 			}
 		}
@@ -45,6 +45,9 @@ func WriteData2Influx(keys []string) {
 }
 
 func writePoints(unit fahapi.Unit) bool {
+	if unit == nil {
+		return false
+	}
 	point := newInfluxPoint(unit)
 	if point != nil {
 		writeApi.WritePoint(point)
