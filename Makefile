@@ -1,20 +1,24 @@
-all: fahinflux fahcli fahvswitch
-all-pi: fahinflux-pi fahcli-pi fahvswitch-pi
+TOOLS := fahinflux fahcli fahvswitch
 
-fahinflux:
-	cd cmd/fahinflux && go build -o fahinflux main.go Influx.go Influx4Unit.go
+.PHONY: all all-pi test vet fmt clean $(TOOLS) $(addsuffix -pi,$(TOOLS))
 
-fahinflux-pi:
-	cd cmd/fahinflux && env GOOS=linux GOARCH=arm GOARM=7 go build -o fahinflux-pi main.go Influx.go Influx4Unit.go
+all: $(TOOLS)
+all-pi: $(addsuffix -pi,$(TOOLS))
 
-fahcli:
-	cd cmd/fahcli && go build -o fahcli main.go channel.go device.go getset.go virtual.go
+$(TOOLS):
+	go build -o cmd/$@/$@ ./cmd/$@
 
-fahcli-pi:
-	cd cmd/fahcli && env GOOS=linux GOARCH=arm GOARM=7 go build -o fahcli-pi main.go channel.go device.go getset.go virtual.go
+$(addsuffix -pi,$(TOOLS)):
+	env GOOS=linux GOARCH=arm GOARM=7 go build -o cmd/$(patsubst %-pi,%,$@)/$@ ./cmd/$(patsubst %-pi,%,$@)
 
-fahvswitch:
-	cd cmd/fahvswitch && go build -o fahvswitch main.go
+test:
+	go test -race ./...
 
-fahvswitch-pi:
-	cd cmd/fahvswitch && GOOS=linux GOARCH=arm GOARM=7 go build -o fahvswitch-pi main.go
+vet:
+	go vet ./...
+
+fmt:
+	gofmt -l .
+
+clean:
+	rm -f $(foreach t,$(TOOLS),cmd/$(t)/$(t) cmd/$(t)/$(t)-pi)
