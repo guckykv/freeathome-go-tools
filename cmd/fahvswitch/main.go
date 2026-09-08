@@ -10,6 +10,7 @@ import (
 	"os"
 	"os/user"
 	"path/filepath"
+	"sort"
 	"strings"
 )
 
@@ -209,15 +210,32 @@ func handleArgs(argumentList []string) (vidList []string) {
 	var device *fahapi.Device
 
 	if *useNative {
+		// The arguments are native IDs; translate them into free@home serials.
+		// Collect what is still outstanding in a set: removing from the slice
+		// while iterating shifted the very indices being used.
+		wanted := make(map[string]bool, len(argumentList))
+		for _, arg := range argumentList {
+			wanted[arg] = true
+		}
 		for _, unit := range fahapi.UnitMap {
-			if i, ok := inArray(argumentList, unit.GetUnitData().NativeId); ok {
+			nativeId := unit.GetUnitData().NativeId
+			if nativeId != nil && wanted[*nativeId] {
 				vidList = append(vidList, unit.GetUnitData().SerialNumber)
-				argumentList = append(argumentList[:i], argumentList[i+1:]...)
+				delete(wanted, *nativeId)
 			}
 		}
-		if len(argumentList) > 0 {
-			log.Fatalf("Can't find all native devices: %v\n", argumentList)
+		if len(wanted) > 0 {
+			missing := make([]string, 0, len(wanted))
+			for id := range wanted {
+				missing = append(missing, id)
+			}
+			sort.Strings(missing)
+			log.Fatalf("Can't find all native devices: %v\n", missing)
 		}
+	} else {
+		// The arguments are the free@home device IDs themselves. Without this
+		// the list stayed empty and the proxy forwarded nothing at all.
+		vidList = append(vidList, argumentList...)
 	}
 
 	var err error
