@@ -50,7 +50,9 @@ func main() {
 		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
 	}
 
-	fahapi.ReadAndHydradteAllDevices()
+	if err := fahapi.ReadAndHydrateAllDevices(); err != nil {
+		log.Fatal(err)
+	}
 
 	if !*noWebsocket {
 		err := fahapi.StartWebSocketLoop(300)

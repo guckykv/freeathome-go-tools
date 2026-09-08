@@ -48,7 +48,9 @@ func main() {
 		log.Fatalf("Need virtual DeviceId as parameter\n")
 	}
 
-	fahapi.ReadAndHydradteAllDevices()
+	if err := fahapi.ReadAndHydrateAllDevices(); err != nil {
+		log.Fatal(err)
+	}
 
 	if *listVirtuals {
 		for _, unit := range fahapi.UnitMap {
@@ -76,7 +78,9 @@ func handleVSwitchMessage(message fahapi.WebsocketMessage) {
 	for updDatapoint, value := range datapoints {
 		split := strings.Split(updDatapoint, "/")
 		if len(split) != 3 {
-			logger.Fatalf("illegal message %+v: illegal datapoint format %s", message, updDatapoint)
+			// Skip the malformed key instead of ending the proxy.
+			logger.Printf("warning: illegal datapoint format %q, skipped\n", updDatapoint)
+			continue
 		}
 		deviceId := split[0]
 
