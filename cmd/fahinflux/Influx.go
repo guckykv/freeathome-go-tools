@@ -36,6 +36,13 @@ func InitializeInfluxDB(url, token, org, bucket string) {
 	influxClient = influxdb2.NewClientWithOptions(url, token, influxdb2.DefaultOptions().SetBatchSize(50))
 	writeApi = influxClient.WriteAPI(org, bucket)
 
+	// InfluxDB 2.x rejects a write without an organisation, and reports it as
+	// "bucket not found", which points at the wrong thing. 1.8.x ignores org.
+	if org == "" {
+		logger.Printf("influx: no organisation configured -- fine for InfluxDB 1.8.x, "+
+			"but 2.x will answer %q for every write. Set InfluxOrg / INFLUX_ORG.\n", "bucket not found")
+	}
+
 	go func() {
 		for err := range writeApi.Errors() {
 			logger.Printf("influx write error: %s\n", err)

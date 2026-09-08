@@ -21,8 +21,9 @@ type Configuration struct {
 	Username    string `env:"FHAPI_USER"`     // username comes from free@home app
 	Password    string `env:"FHAPI_PASSWORD"` // pw is the same like you have used in the free@home app
 	InfluxUrl   string `env:"INFLUX_URL"`     // complete url with schema, host, and port
-	InfluxDB    string `env:"INFLUX_DB"`      // complete url with schema, host, and port
+	InfluxDB    string `env:"INFLUX_DB"`      // database (1.8.x) or bucket (2.x) name
 	InfluxToken string `env:"INFLUX_TOKEN"`   // at influxdb 1.8.x this can be "username:password"
+	InfluxOrg   string `env:"INFLUX_ORG"`     // required by influxdb 2.x; leave empty for 1.8.x
 }
 
 var (
@@ -59,7 +60,7 @@ func main() {
 	})
 
 	if !*debug {
-		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
+		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, configuration.InfluxOrg, configuration.InfluxDB)
 		defer CloseInfluxDB()
 	}
 
@@ -96,8 +97,9 @@ func usage() {
 	Username    or as env: "FHAPI_USER"     // username comes from free@home app: a3XXXXXX-XXXX-XXXX-XXXX-XXXXXXXXXXb9
 	Password    or as env: "FHAPI_PASSWORD" // pw is the same like you have used in your free@home app
 	InfluxUrl   or as env: "INFLUX_URL"     // complete url with schema, host, and port
-	InfluxDB    or as env: "INFLUX_DB"      // database (bucket) name
+	InfluxDB    or as env: "INFLUX_DB"      // database (1.8.x) or bucket (2.x) name
 	InfluxToken or as env: "INFLUX_TOKEN"   // at influxdb 1.8.x this can be "username:password"
+	InfluxOrg   or as env: "INFLUX_ORG"     // required by influxdb 2.x; leave empty for 1.8.x
 `)
 }
 
