@@ -1,13 +1,15 @@
 package main
 
 import (
-	"fmt"
 	"github.com/guckykv/freeathome-go-fahapi/fahapi"
 	"github.com/influxdata/influxdb-client-go/v2"
 	"github.com/influxdata/influxdb-client-go/v2/api"
 )
 
-var writeApi api.WriteAPI
+var (
+	influxClient influxdb2.Client
+	writeApi     api.WriteAPI
+)
 
 type influxConfiguration struct {
 	active bool // should we track all points to influx - default: on
@@ -19,7 +21,9 @@ type influxConfiguration struct {
 
 var influxConfig influxConfiguration
 
-// if you call this function, all changes of RTC, WindowSensor, and WeatherStation will be logged to influxdb
+// InitializeInfluxDB opens the connection. Call CloseInfluxDB when done. After
+// this, all changes of RTC, WindowSensor and WeatherStation are logged to
+// InfluxDB.
 func InitializeInfluxDB(url, token, org, bucket string) {
 	influxConfig = influxConfiguration{
 		active: true,
@@ -28,20 +32,36 @@ func InitializeInfluxDB(url, token, org, bucket string) {
 		org:    org,
 		bucket: bucket,
 	}
+
+	influxClient = influxdb2.NewClientWithOptions(url, token, influxdb2.DefaultOptions().SetBatchSize(50))
+	writeApi = influxClient.WriteAPI(org, bucket)
+
+	go func() {
+		for err := range writeApi.Errors() {
+			logger.Printf("influx write error: %s\n", err)
+		}
+	}()
+}
+
+// CloseInfluxDB flushes what is pending and closes the connection.
+func CloseInfluxDB() {
+	if influxClient == nil {
+		return
+	}
+	writeApi.Flush()
+	influxClient.Close()
+	influxClient = nil
 }
 
 func WriteData2Influx(keys []string) {
-	if influxConfig.active {
-		count := 0
-		client := openInflux()
-		for _, key := range keys {
-			if writePoints(fahClient.Unit(key)) {
-				count++
-			}
-		}
-		flushAndCloseInflux(client)
-		//fmt.Printf("%d influx points written\n", count)
+	if !influxConfig.active {
+		return
 	}
+
+	for _, key := range keys {
+		writePoints(fahClient.Unit(key))
+	}
+	writeApi.Flush()
 }
 
 func writePoints(unit fahapi.Unit) bool {
@@ -54,21 +74,4 @@ func writePoints(unit fahapi.Unit) bool {
 		return true
 	}
 	return false
-}
-
-func openInflux() influxdb2.Client {
-	client := influxdb2.NewClientWithOptions(influxConfig.url, influxConfig.token, influxdb2.DefaultOptions().SetBatchSize(50))
-	writeApi = client.WriteAPI(influxConfig.org, influxConfig.bucket)
-	errorsCh := writeApi.Errors()
-	go func() {
-		for err := range errorsCh {
-			fmt.Printf("influx write error: %s\n", err.Error())
-		}
-	}()
-	return client
-}
-
-func flushAndCloseInflux(client influxdb2.Client) {
-	writeApi.Flush()
-	client.Close()
 }

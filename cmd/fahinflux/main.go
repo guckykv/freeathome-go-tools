@@ -60,6 +60,7 @@ func main() {
 
 	if !*debug {
 		InitializeInfluxDB(configuration.InfluxUrl, configuration.InfluxToken, "", configuration.InfluxDB)
+		defer CloseInfluxDB()
 	}
 
 	if err := fahClient.ReadAndHydrateAllDevices(); err != nil {
@@ -83,8 +84,6 @@ func main() {
 			log.Fatal(err)
 		}
 	}
-
-	os.Exit(0)
 }
 
 func usage() {
