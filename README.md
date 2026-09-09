@@ -48,5 +48,16 @@ So that the state will be shown correctly at the SysAP.
 
 See [fahvswitch](./cmd/fahvswitch).
 
+## sysapprobe - Measure how the SysAP treats websocket clients
 
+A diagnostic tool, not a daemon. It speaks the websocket protocol directly to find
+out which keepalive the System Access Point tolerates, how many connections it
+serves at once, and how long a handshake takes. Worth running after a firmware
+update, because the fahapi library builds on the answers.
 
+One finding is worth repeating here: **a single text frame on the websocket
+disconnects every client of the SysAP**, the free@home app included -- not just
+the sender. Ping frames are answered reliably. The modes that send a text frame
+therefore refuse to run without `-disruptive`.
+
+See [sysapprobe](cmd/sysapprobe/README.md) for the measurements against software 2.6.

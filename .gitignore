@@ -16,6 +16,9 @@ cmd/fahvswitch/fahvswitch-pi
 cmd/fahcli/fahcli-pi64
 cmd/fahinflux/fahinflux-pi64
 cmd/fahvswitch/fahvswitch-pi64
+cmd/sysapprobe/sysapprobe
+cmd/sysapprobe/sysapprobe-pi
+cmd/sysapprobe/sysapprobe-pi64
 
 ### IDE
 .idea/

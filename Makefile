@@ -1,4 +1,4 @@
-TOOLS := fahinflux fahcli fahvswitch
+TOOLS := fahinflux fahcli fahvswitch sysapprobe
 
 # The library is developed alongside these tools, joined by a go.work in the
 # parent directory. check-noworkspace proves the build also works without it.
