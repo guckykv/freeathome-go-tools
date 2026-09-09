@@ -81,6 +81,14 @@ func main() {
 	ctx, stop := signal.NotifyContext(context.Background(), os.Interrupt, syscall.SIGTERM)
 	defer stop()
 
+	hangup := make(chan os.Signal, 1)
+	signal.Notify(hangup, syscall.SIGHUP)
+	go func() {
+		for range hangup {
+			api.TreatAllUnitsAsUpdated(true)
+		}
+	}()
+
 	// The PUTs run in their own goroutine. Issuing them from the message
 	// callback would stall the websocket loop -- including its pings -- for the
 	// duration of a synchronous HTTP request.

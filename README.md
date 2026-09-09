@@ -7,14 +7,40 @@ of the [System Access Point 2.0 für Busch-free@home®](https://www.busch-jaeger
 
 ## Installation
 
-Clone this repository, install locally at least Go 1.15, call `make all` or,
-if you want to use the tools on your raspberry pi `make all-pi`.
+Clone this repository and run `make all`. The binaries land next to their sources,
+as `cmd/fahcli/fahcli` and so on. For a Raspberry Pi cross-compile with `make all-pi`
+(32-bit) or `make all-pi64` (64-bit); those get a `-pi` resp. `-pi64` suffix.
 
-Than you get two commands `cmd/fahcli/fahcli` and `cmd/fahinflux/fahinflux`.
-Or for the raspberry pi `cmd/fahcli/fahcli-pi` and `cmd/fahinflux/fahinflux-pi`.
+`make check` runs gofmt, vet, build and tests before you commit.
 
-Create a config file `.fahapi-config.json`. See the [template](.fahapi-config-TEMPLATE.json)
-and put it in your homedir.
+Create a config file `.fahapi-config.json` in your home directory. See the
+[template](.fahapi-config-TEMPLATE.json). Every tool reads the same file and ignores the
+keys it does not need.
+
+## Running as a service
+
+`fahinflux` and `fahvswitch` are daemons; the others are one-shot commands.
+
+| Signal | Effect |
+| --- | --- |
+| `SIGTERM`, `SIGINT` | Shut down: close the websocket, flush pending InfluxDB writes, exit 0 |
+| `SIGHUP` | Report every unit as updated, so all current values are written |
+
+A daemon does not exit when the connection drops — it reconnects with a backoff of up to
+a minute. So `Restart=on-failure` will rarely fire; use `Restart=always` if you want a
+crash covered.
+
+```ini
+[Service]
+ExecStart=/home/pi/fahinflux
+Restart=always
+RestartSec=10
+KillSignal=SIGTERM
+TimeoutStopSec=20
+```
+
+Run **one** instance per SysAP. Several are served fine, but each is a client of an
+access point that other software talks to as well.
 
 ---
 
