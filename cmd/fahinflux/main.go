@@ -32,7 +32,7 @@ var (
 	configFile  = flag.String("c", "~/.fahapi-config.json", "configuration file")
 	noWebsocket = flag.Bool("n", false, "no websocket connection; read and update data only once and quit")
 	verbose     = flag.Bool("v", false, "verbose output")
-	quiet       = flag.Bool("q", false, "no output")
+	quiet       = flag.Bool("q", false, "log only errors and warnings, not every change")
 	debug       = flag.Bool("d", false, "debug: read all changes from the SysAp but doesn't connect or write to InfluxDB")
 
 	fahClient *fahapi.Client
